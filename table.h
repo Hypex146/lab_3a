@@ -89,11 +89,11 @@ void table_ks1_debug_print(Table* table);
 void table_reorganize_ks1(Table *table);
 void find_by_ks1_key(Table *table);
 void find_by_ks2_key(Table *table);
-void find_by_double_key(Table *table) /**/
+void find_by_double_key(Table *table); //
 void table_ks2_debug_print(Table* table);
 void table_del_by_ks1(Table *table);
-void table_del_by_ks2(Table *table); /**/
-void table_del_all_by_ks2(Table *table); /**/
-void table_print(Table *table) /**/
+void table_del_by_ks2(Table *table); //
+void table_del_all_by_ks2(Table *table); //
+void table_print(Table *table); //
 
 #endif

@@ -11,9 +11,13 @@ void print_menu(void){
 	printf("*4) Find element by ks1 key\n");
 	printf("*5) Find element by ks2 key\n");
 	printf("*6) Reorganize ks1\n");
-	printf("7) Ks1 print\n");
-	printf("8) Ks1 debug print\n");
-	printf("9) Ks2 debug print\n");
+	printf("*7) Find element by double key\n");
+	printf("*8) Delete element by ks2 key and release\n");
+	printf("*9) Delete all elements by ks2 key\n");
+	printf("*10) Print Table\n");
+	printf("11) Ks1 print\n");
+	printf("12) Ks1 debug print\n");
+	printf("13) Ks2 debug print\n");
 }
 
 
@@ -24,7 +28,7 @@ void UI(void){
 		print_menu();
 		do{
 			get_int(&choice);
-		} while (choice<0 || choice>9);
+		} while (choice<0 || choice>13);
 		switch (choice){
 			case 0:{
 				//
@@ -55,14 +59,30 @@ void UI(void){
 				break;
 			}
 			case 7:{
-				table_ks1_print(table);
+				find_by_double_key(table);
 				break;
 			}
 			case 8:{
-				table_ks1_debug_print(table);
+				table_del_by_ks2(table);
 				break;
 			}
 			case 9:{
+				table_del_all_by_ks2(table);
+				break;
+			}
+			case 10:{
+				table_print(table);
+				break;
+			}
+			case 11:{
+				table_ks1_print(table);
+				break;
+			}
+			case 12:{
+				table_ks1_debug_print(table);
+				break;
+			}
+			case 13:{
 				table_ks2_debug_print(table);
 				break;
 			}

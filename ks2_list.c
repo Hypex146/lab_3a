@@ -226,7 +226,6 @@ int list_len_nd2(List_nd2* list){
 
 
 int list_write_nd2(List_nd2 *list){
-    printf("Elements:\n");
     if(list->head->next) {
         Node2 *now = list->head->next;
         while (now){
@@ -236,7 +235,7 @@ int list_write_nd2(List_nd2 *list){
             now = now->next;
         }
     }
-	printf("\n\n");
+	printf("\n");
     return 0;
 }
 // done

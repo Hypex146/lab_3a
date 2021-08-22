@@ -102,13 +102,17 @@ void find_by_ks2_key(Table *table){
 
 
 void table_ks2_debug_print(Table* table){
+	printf("KeySpace2 (csize2 -> %d)\n", table->csize2);
 	for (int i=0; i<table->msize2; i++){
-		printf("Hash func -> %d:\n", i);
+		int size = 0;
+		if (table->ks2[i]) size = list_len_ks2(table->ks2[i]);
+		printf("Hash func -> %d (size: %d):\n", i, size);
 		if (table->ks2[i]){
 			for (int j=0; j<list_len_ks2(table->ks2[i]); j++){
 				KeySpace2 *ks2;
 				list_take_ks2(table->ks2[i], j, &ks2);
 				printf("Key -> %u\n", ks2->key);
+				printf("Elements: (size: %d)\n", list_len_nd2(ks2->node));
 				list_write_nd2(ks2->node);
 			}
 		} else{

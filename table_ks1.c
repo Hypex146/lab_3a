@@ -51,9 +51,10 @@ Item *get_item_by_ks1_key(Table *table, char *key1){
 
 
 void table_del_ks1_without_del_item(Table *table, char *key1){
-	for (int i=0; i<table->csize1; i++){
+	for (int i=0; i<table->msize1; i++){
 		if (!strcmp(table->ks1[i].key, key1)){
 			//free(table->ks1[i].key);
+			//printf("Opa!\n");
 			table->ks1[i].busy = 0;
 			return;
 		}

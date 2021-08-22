@@ -172,17 +172,25 @@ void table_del(Table *table){
 		KeyType2 key2;
 		get_unint(&key2);
 		
-		if (table_check_key_ks1(table, key1)==1 && get_list_by_ks2_key(table, key2)!=NULL){
-			Item *item = get_item_by_ks1_key(table, key1);
-			table_del_ks1_without_del_item(table, key1);
-			List_nd2 *list_nd2 = get_list_by_ks2_key(table, key2);
-			int release = get_release_by_key1(list_nd2, key1);
-			table_del_ks2_without_del_item(table, key2, release);
-			free(item->info->string);
-			free(item->info);
-			free(item);
-			table->csize1--;
-			table->csize2--;
+		List_nd2 *list = NULL;
+		Item *item = NULL;
+		Node2 *node2 = NULL;
+		list = get_list_by_ks2_key(table, key2);
+		if (list){
+			int release = get_release_by_key1(list, key1);
+			if (release>=0){
+				list_take_nd2(list, release, &node2);
+				item = node2->info;
+				table_del_ks1_without_del_item(table, key1);
+				table_del_ks2_without_del_item(table, key2, release);
+				free(item->info->string);
+				free(item->info);
+				free(item);
+				table->csize1--;
+				table->csize2--;
+			} else{
+				printf("This element is not exist\n");
+			}
 		} else{
 			printf("This element is not exist\n");
 		}
@@ -273,7 +281,7 @@ void table_del_by_ks2(Table *table){
 		Item *item = get_item_by_ks2_key(table, key2, release);
 		if (item){
 			table_del_ks2_without_del_item(table, key2, release);
-			KeyType1 key1 = item->key1;
+			char* key1 = item->key1;
 			table_del_ks1_without_del_item(table, key1);
 			free(item->info->string);
 			free(item->info);
@@ -294,15 +302,17 @@ void table_del_all_by_ks2(Table *table){
 		printf("Enter the key in ks2 (unsigned)\n");
 		KeyType2 key2;
 		get_unint(&key2);
-		List_nd2 *list = NULL:
+		List_nd2 *list = NULL;
 		list = get_list_by_ks2_key(table, key2);
 		if (list){
 			int len = list_len_nd2(list);
 			for (int i=0; i<len; i++){
 				Item *item = NULL;
-				list_take_nd2(list, 0, &item);
+				Node2 *node2 = NULL;
+				list_take_nd2(list, 0, &node2);
+				item = node2->info;
 				table_del_ks2_without_del_item(table, key2, 0);
-				KeyType1 key1 = item->key1;
+				char* key1 = item->key1;
 				table_del_ks1_without_del_item(table, key1);
 				free(item->info->string);
 				free(item->info);
@@ -322,7 +332,7 @@ void table_del_all_by_ks2(Table *table){
 
 void table_print(Table *table){
 	table_ks1_debug_print(table);
-	printf("\n")
+	printf("\n");
 	table_ks2_debug_print(table);
 }
 
