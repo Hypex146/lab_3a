@@ -1,83 +1,7 @@
-#include "table.h"
-#include "table_ks1.h"
-#include "table_ks2.h"
+#include "keyspace1.h"
+#include "keyspace2.h"
 
-int get_unint(unsigned *a){
-    int n;
-	int tmp;
-    do{
-        n = scanf("%u", &tmp);
-		if (tmp<0) n=0;
-        if (n < 0) return 1;
-        if (n == 0){
-            printf("Error!\n");
-            scanf("%*c");
-        }
-    } while (n == 0);
-	*a=(unsigned)tmp;
-    return 0;
-}
-
-
-int get_int(int *a){
-    int n;
-    do{
-        n = scanf("%d", a);
-        if (n < 0) return 0;
-        if (n == 0){
-            printf("Error!\n");
-            scanf("%*c");
-        }
-    } while (n == 0);
-    return 1;
-}
-
-
-char *get_str(){
-    char buf[81] = {0};
-    char *res = NULL;
-    int len = 0;
-    int n = 0;
-    do {
-        n = scanf("%80[^\n]", buf);
-        if (n < 0) {
-            if (!res) {
-                return NULL;
-            }
-        } else if (n > 0) {
-            int chunk_len = strlen(buf);
-            int str_len = len + chunk_len;
-            res = realloc(res, str_len + 1);
-            memcpy(res + len, buf, chunk_len);
-            len = str_len;
-        } else {
-            scanf("%*c");
-        }
-    } while (n > 0);
-
-    if (len > 0) {
-        res[len] = '\0';
-    } else {
-        res = calloc(1, sizeof(char));
-    }
-
-    return res;
-}
-
-
-void get_const_len_str(char *str){
-	int i = 0;
-	char c;
-	while(i < STRLEN && (c=getchar())!=EOF && c!='\n'){
-		str[i] = c;
-		i++;
-	}
-	str[i] = '\0';
-	//printf("HEHE -> %d\n", i);
-}
-
-
-Table *table_init(void){
+Table *_initTable(){
 	Table *table = (Table*)malloc(sizeof(Table));
 	table->msize1 = MAXSIZE1;
 	table->csize1 = 0;
@@ -95,7 +19,7 @@ Table *table_init(void){
 }
 
 
-static InfoType *info_init(int first_number, int second_number, char *string){
+InfoType *_initInfo(int first_number, int second_number, char *string){
 	InfoType *info = (InfoType*)malloc(sizeof(InfoType));
 	info->first_number = first_number;
 	info->second_number = second_number;
@@ -104,235 +28,157 @@ static InfoType *info_init(int first_number, int second_number, char *string){
 }
 
 
-static Item *item_init(int first_number, int second_number, char *string, 
-						KeyType1 key1, KeyType2 key2){
+Item *_initItem(InfoType * info, KeyType1 key1, KeyType2 key2){
 	Item *item = (Item*)malloc(sizeof(Item));
 	item->next = NULL;
-	item->release = 0;
-	item->info = info_init(first_number, second_number, string);
-	memcpy(item->key1, key1, STRLEN*sizeof(char));
+	item->info = info;
+	memcpy(item->key1, key1, KEY1LEN*sizeof(char));
 	item->key2 = key2;
 	return item;
 }
 
 
-//=================================================================================
-
-
-void find_by_double_key(Table *table){
-	KeyType1 key1;
-	KeyType2 key2;
-	Item *item = NULL;
-	Node2 *node2 = NULL;
-	if (table->csize1 > 0){
-		printf("Enter the key in ks1 (string)\n");
-		KeyType1 key1;
-		scanf("%*c");
-		get_const_len_str(key1);
-		
-		printf("Enter the key in ks2 (unsigned)\n");
-		KeyType2 key2;
-		get_unint(&key2);
-		
-		List_nd2 *list = NULL;
-		list = get_list_by_ks2_key(table, key2);
-		
-		if (list){
-			int release = get_release_by_key1(list, key1);
-			if (release>=0){
-				list_take_nd2(list, release, &node2);
-				item = node2->info;
-				printf("\n");
-				printf("key1 -> %s\n", item->key1);
-				printf("key2 -> %u\n", item->key2);
-				printf("string -> %s\n", item->info->string);
-				printf("first number -> %d\n", item->info->first_number);
-				printf("second number -> %d\n", item->info->second_number);
-				printf("\n");
-			} else{
-				printf("There are no item with this key\n");
-			}
-		} else{
-			printf("There are no item with this key\n");
-		}
-	} else{
-		printf("Table is empty\n");
-	}
+int _clearItem(Item *item){
+	free(item->info->string);
+	free(item->info);
+	free(item);
+	return 0;
 }
 
 
-void table_del(Table *table){
-	if (table->csize1 > 0){
-		printf("Enter the key in ks1 (string)\n");
-		KeyType1 key1;
-		scanf("%*c");
-		get_const_len_str(key1);
-		
-		printf("Enter the key in ks2 (unsigned)\n");
-		KeyType2 key2;
-		get_unint(&key2);
-		
+Item *_findByPairKey(Table *table, KeyType1 key1, KeyType2 key2){
+	if (table->csize1>0){
 		List_nd2 *list = NULL;
-		Item *item = NULL;
-		Node2 *node2 = NULL;
-		list = get_list_by_ks2_key(table, key2);
+		list = _getListByKey2(table, key2);
 		if (list){
-			int release = get_release_by_key1(list, key1);
+			int release = _getReleaseByKey1(list, key1);
 			if (release>=0){
-				list_take_nd2(list, release, &node2);
-				item = node2->info;
-				table_del_ks1_without_del_item(table, key1);
-				table_del_ks2_without_del_item(table, key2, release);
-				free(item->info->string);
-				free(item->info);
-				free(item);
+				Node2 *node2 = NULL;
+				_takeFromKeyList(list, release, &node2);
+				return node2->info;
+			}
+		}	
+	}
+	return NULL;
+}
+
+
+int _delFromTable(Table *table, KeyType1 key1, KeyType2 key2){
+	if (table->csize1>0){
+		List_nd2 *list = NULL;
+		list = _getListByKey2(table, key2);
+		if (list){
+			int release = _getReleaseByKey1(list, key1);
+			if (release>=0){
+				Node2 *node2 = NULL;
+				_takeFromKeyList(list, release, &node2);
+				Item *item = node2->info;
+				_delFromKs1(table, key1);
+				_delFromKs2(table, key2, release);
+				_clearItem(item);
 				table->csize1--;
 				table->csize2--;
-			} else{
-				printf("This element is not exist\n");
+				return 0;
 			}
-		} else{
-			printf("This element is not exist\n");
 		}
-	} else{
-		printf("Table is empty\n");
 	}
+	return -1;
 }
 
 
-void table_add(Table *table){
+int _addInTable(Table *table, Item *item){
 	if (table->csize1<table->msize1 && table->csize2<table->msize2){
-		printf("Enter the key in ks1 (string)\n");
-		KeyType1 key1;
-		scanf("%*c");
-		get_const_len_str(key1);
-		
-		printf("Enter the key in ks2 (unsigned)\n");
-		KeyType2 key2;
-		get_unint(&key2);
-		
-		if (!table_check_key_ks1(table, key1)){
-			int first_number;
-			int second_number;
-			char *string;
-			printf("Enter first_number\n");
-			get_int(&first_number);
-			printf("Enter second_number\n");
-			get_int(&second_number);
-			printf("Enter string\n");
-			scanf("%*c");
-			string = get_str();
-			Item *item = item_init(first_number, second_number, string, key1, key2);
-			
-			table_add_ks1_static(table, item, key1);
+		if (!_checkKey1(table, item->key1)){
+			_addInKs1(table, item, item->key1);
 			table->csize1++;
-			
-			table_add_ks2_static(table, item, key2);
+			_addInKs2(table, item, item->key2);
 			table->csize2++;
-			
-		} else{
-			printf("We have the same key in ks1\n");
+			return 0;
 		}
-	} else{
-		printf("KS1 is FULL or KS2 is FULL\n");
-		return;
 	}
+	return -1;
 }
 
 
-void table_del_by_ks1(Table *table){
-	if (table->csize1 > 0){
-		printf("Enter the key in ks1 (string)\n");
-		KeyType1 key1;
-		scanf("%*c");
-		get_const_len_str(key1);
-		
-		if (table_check_key_ks1(table, key1)==1){
-			Item *item = get_item_by_ks1_key(table, key1);
-			table_del_ks1_without_del_item(table, key1);
-			
+int _delFromTableByKey1(Table *table, KeyType1 key1){
+	if (table->csize1>0){
+		if (_checkKey1(table, key1)==1){
+			Item *item = _getItemByKey1(table, key1);
+			_delFromKs1(table, key1);
 			KeyType2 key2 = item->key2;
-			List_nd2 *list_nd2 = get_list_by_ks2_key(table, key2);
-			int release = get_release_by_key1(list_nd2, key1); 
-			table_del_ks2_without_del_item(table, key2, release);
-			
-			free(item->info->string);
-			free(item->info);
-			free(item);
+			List_nd2 *list_nd2 = _getListByKey2(table, key2);
+			int release = _getReleaseByKey1(list_nd2, key1);
+			_delFromKs2(table, key2, release);
+			_clearItem(item);
 			table->csize1--;
 			table->csize2--;
-		} else{
-			printf("This element is not exist\n");
+			return 0;
 		}
-	} else{
-		printf("Table is empty\n");
 	}
+	return -1;
 }
 
 
-void table_del_by_ks2(Table *table){
+int _delFromTableByKey2(Table *table, KeyType2 key2, int release){
 	if (table->csize1 > 0){
-		printf("Enter the key in ks2 (unsigned)\n");
-		KeyType2 key2;
-		get_unint(&key2);
-		printf("Enter the release (int)\n");
-		int release;
-		get_int(&release);
-		Item *item = get_item_by_ks2_key(table, key2, release);
+		Item *item = _getItemByKey2(table, key2, release);
 		if (item){
-			table_del_ks2_without_del_item(table, key2, release);
-			char* key1 = item->key1;
-			table_del_ks1_without_del_item(table, key1);
-			free(item->info->string);
-			free(item->info);
-			free(item);
+			_delFromKs2(table, key2, release);
+			_delFromKs1(table, item->key1);
+			_clearItem(item);
 			table->csize1--;
 			table->csize2--;
-		} else{
-			printf("This element is not exist\n");
+			return 0;
 		}
-	} else{
-		printf("Table is empty\n");
 	}
+	return -1;
 }
 
 
-void table_del_all_by_ks2(Table *table){
-	if (table->csize1 > 0){
-		printf("Enter the key in ks2 (unsigned)\n");
-		KeyType2 key2;
-		get_unint(&key2);
+int _delAllFromTableByKey2(Table *table, KeyType2 key2){
+	if (table->csize1>0){
 		List_nd2 *list = NULL;
-		list = get_list_by_ks2_key(table, key2);
+		list = _getListByKey2(table, key2);
 		if (list){
-			int len = list_len_nd2(list);
+			int len = _lenKeyList(list);
 			for (int i=0; i<len; i++){
 				Item *item = NULL;
 				Node2 *node2 = NULL;
-				list_take_nd2(list, 0, &node2);
+				_takeFromKeyList(list, 0, &node2);
 				item = node2->info;
-				table_del_ks2_without_del_item(table, key2, 0);
-				char* key1 = item->key1;
-				table_del_ks1_without_del_item(table, key1);
-				free(item->info->string);
-				free(item->info);
-				free(item);
+				_delFromKs2(table, key2, 0);
+				_delFromKs1(table, item->key1);
+				_clearItem(item);
 				table->csize1--;
 				table->csize2--;
 			}
-		} else{
-			printf("There are no item with this key\n");
+			return 0;
 		}
-	} else{
-		printf("Table is empty\n");
 	}
-	
+	return -1;
 }
 
 
-void table_print(Table *table){
-	table_ks1_debug_print(table);
-	printf("\n");
-	table_ks2_debug_print(table);
+int _clearTable(Table *table){
+	if (table){
+		for (int i=0; i<table->msize1; i++){
+			if (table->ks1[i].busy==1){
+				_clearItem(table->ks1[i].info);
+			}
+		}
+		free(table->ks1);
+		for (int i=0; i<table->msize2; i++){
+			if (table->ks2[i]!=NULL){
+				_clearHashList(table->ks2[i]);
+			}
+		}
+		free(table->ks2);
+		free(table);
+		return 0;
+	}
+	return -1;
 }
+
+
+
 
